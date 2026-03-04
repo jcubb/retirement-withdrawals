@@ -1,0 +1,92 @@
+Optimal withdrawals from retirement accounts
+
+First read this as background:
+https://robberger.com/tax-efficient-retirement-withdrawal-strategies/?utm_source=google&utm_medium=cpc&utm_campaign=21353580948&utm_content=&utm_term=&utm_id={campaignname}&place=&net=x&match=&adgroupid=&gad_source=1&gad_campaignid=21379987144&gbraid=0AAAAABbR07v_2yMJyFwersalcofPmGupg&gclid=CjwKCAiAh5XNBhAAEiwA_Bu8FV5h-iv5utcTJIuR9JT_lk8cCUd3SNWkJyB2zD5nlq7liVWB6haAQhoC6ksQAvD_BwE
+
+I would like to run simulations of market returns assuming I have 2 accounts:
+(1) A cash account, all invested in tax-free municipal bonds with a given fixed rate of return
+(2) A retirement account that is allocated at a given percentage between municipal bonds and stocks
+
+Stocks will have a random annual rate of return based on a Normal distribution with an assumed mean and variance
+
+The problem we will solve is for an individual who is 59 years old with a given fixed death age, and an initial amount of wealth in those 2 accounts. For a given path of market returns, that individual must spend income from those 2 accounts such that:
+(1) Wealth ends at zero at the death age.
+(2) The annual withdrawals are chosen optimally so as to minimize taxes.
+
+Tax brackets will be fixed at the current 2026 US tax brackets for a couple filing jointly.
+
+Social security income will be assumed to begin at age 70 at the maximum level (currently about $120,000 per year for a couple)
+
+85% of social security income will assume to be taxed as ordinary income
+
+There will be an option to add additional income earned between the ages of 59 and 65 (the assumed age of retirement)
+
+We will run many simulations and save the optimal withdrawal paths from age 59 to the death date.
+
+We will start with a plan to develop the functionality and solution to the optimization problem. 
+
+Once that is working, we will set up a github repo, and then build an app to be deployed on Render.
+
+
+Age	Life Expectancy
+60	27.1
+61	26.2
+62	25.4
+63	24.5
+64	23.7
+65	22.9
+66	22
+67	21.2
+68	20.4
+69	19.6
+70	18.8
+71	18
+72	17.2
+73	16.4
+74	15.6
+75	14.8
+76	14.1
+77	13.3
+78	12.6
+79	11.9
+80	11.2
+81	10.5
+82	9.9
+83	9.3
+84	8.7
+85	8.1
+86	7.6
+87	7.1
+88	6.6
+89	6.1
+90	5.7
+91	5.3
+92	4.9
+93	4.6
+94	4.3
+95	4
+96	3.7
+97	3.4
+98	3.2
+99	3
+100	2.8
+101	2.6
+102	2.5
+103	2.3
+104	2.2
+105	2.1
+106	2.1
+107	2.1
+108	2
+109	2
+110	2
+111	2
+112	2
+113	1.9
+114	1.9
+115	1.8
+116	1.8
+117	1.6
+118	1.4
+119	1.1
+120+	1

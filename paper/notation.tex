@@ -1,0 +1,219 @@
+%% notation.tex
+%% Notation reference for the retirement withdrawal optimizer paper.
+%% Compile standalone or \input into the main document.
+
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[margin=1.25in]{geometry}
+\usepackage{hyperref}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+
+\title{Notation Reference\\[4pt]
+       \large Optimal Retirement Withdrawal Strategies\\
+       Under Stochastic Returns and Tax Constraints}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+This document defines the notation used throughout the paper.
+Subscripts index time ($t$); superscripts denote account or income type.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{1\quad Time and Age}
+
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$t$ & year index & $t = 0, 1, \ldots, T-1$; year $t$ runs from
+      age $a_0 + t$ to $a_0 + t + 1$ \\[3pt]
+$T$ & horizon & $T = a_\dagger - a_0$; total years in retirement plan \\[3pt]
+$a_0$ & start age & Age at which planning begins \\[3pt]
+$a_\dagger$ & death age & Planning horizon terminus; all accounts exhaust by $a_\dagger$ \\[3pt]
+$a_{\mathrm{ret}}$ & retirement age & Employment income ceases for $t \geq a_{\mathrm{ret}} - a_0$ \\[3pt]
+$a_{\mathrm{SS}}$ & SS start age & Social Security benefits begin \\[3pt]
+$a_{\mathrm{RMD}}$ & RMD start age & Required minimum distributions begin (age 73) \\
+\bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{2\quad Accounts}
+
+Three accounts are distinguished by their federal tax treatment.
+Balances are measured at the \emph{start} of year $t$, before that year's withdrawal.
+
+\medskip
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$A^m_t$ & muni-bond balance & Taxable account invested in municipal bonds;
+          interest and withdrawals are federally tax-free \\[3pt]
+$A^d_t$ & Traditional balance & Traditional IRA / 401(k); contributions were
+          pre-tax, withdrawals are ordinary income \\[3pt]
+$A^r_t$ & Roth balance & Roth IRA; contributions were after-tax,
+          growth and qualified withdrawals are tax-free; no RMDs \\[3pt]
+$A^m_0,\,A^d_0,\,A^r_0$ & initial balances & Account values at the start of the planning period \\
+\bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{3\quad Withdrawals (Decision Variables)}
+
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$w^m_t \geq 0$ & muni withdrawal & Amount withdrawn from the muni account in year $t$ \\[3pt]
+$w^d_t \geq 0$ & Traditional withdrawal & Amount withdrawn from the Traditional IRA in year $t$;
+                 constitutes ordinary income \\[3pt]
+$w^r_t \geq 0$ & Roth withdrawal & Amount withdrawn from the Roth account in year $t$ \\
+\bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{4\quad Returns and Growth Factors}
+
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$r^m$ & muni rate & Fixed annual return on municipal bonds (deterministic) \\[3pt]
+$\tilde{r}_t$ & stock return & Annual stock return in year $t$;
+               stochastic, i.i.d.\ $\sim \mathcal{N}(\mu,\,\sigma^2)$ \\[3pt]
+$\mu,\,\sigma$ & stock parameters & Mean and standard deviation of the annual stock return \\[3pt]
+$\alpha_d$ & Traditional muni alloc.\ & Fraction of $A^d$ invested in muni bonds;
+             $1-\alpha_d$ in equities \\[3pt]
+$\alpha_r$ & Roth muni alloc.\ & Fraction of $A^r$ invested in muni bonds;
+             defaults to 0 (100\% equities) \\[3pt]
+$r^d_t$ & Traditional return & $r^d_t = \alpha_d\,r^m + (1-\alpha_d)\,\tilde{r}_t$ \\[3pt]
+$r^r_t$ & Roth return & $r^r_t = \alpha_r\,r^m + (1-\alpha_r)\,\tilde{r}_t$ \\[3pt]
+$G^m_t$ & muni growth factor & $G^m_t = (1+r^m)^t$ \\[3pt]
+$G^d_t$ & Traditional growth factor & $G^d_t = \prod_{s=0}^{t-1}(1+r^d_s)$; \quad $G^d_0 = 1$ \\[3pt]
+$G^r_t$ & Roth growth factor & $G^r_t = \prod_{s=0}^{t-1}(1+r^r_s)$; \quad $G^r_0 = 1$ \\
+\bottomrule
+\end{tabular}
+
+\medskip\noindent
+\textbf{Account dynamics.}  For each account $j \in \{m, d, r\}$:
+\[
+  A^j_{t+1} \;=\; \bigl(A^j_t - w^j_t\bigr)\,(1 + r^j_t),
+  \qquad t = 0, \ldots, T-1,
+\]
+which yields the closed-form balance
+\[
+  A^j_t \;=\; A^j_0\,G^j_t \;-\; \sum_{\tau=0}^{t-1} w^j_\tau\,\frac{G^j_t}{G^j_\tau}.
+\]
+This linear representation is exploited in the LP formulation (Appendix~A).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{5\quad Income}
+
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$\bar{y}^{SS}$ & annual SS benefit & Gross annual Social Security benefit \\[3pt]
+$y^{SS}_t$ & Social Security & $y^{SS}_t = \bar{y}^{SS}$ for $a_0+t \geq a_{\mathrm{SS}}$,
+             else $0$ \\[3pt]
+$\phi$ & SS taxable fraction & Share of $y^{SS}_t$ included in ordinary income; $\phi = 0.85$ \\[3pt]
+$\bar{y}^{emp}$ & annual employment & Pre-retirement earned income (e.g.\ part-time work) \\[3pt]
+$y^{emp}_t$ & employment income & $y^{emp}_t = \bar{y}^{emp}$ for $a_0+t < a_{\mathrm{ret}}$,
+              else $0$ \\[3pt]
+$I_t$ & ordinary income & Taxable income: \;$I_t = w^d_t + \phi\,y^{SS}_t + y^{emp}_t$ \\
+\bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{6\quad Taxes}
+
+Federal income tax under Married Filing Jointly (MFJ) 2026 brackets.
+
+\medskip
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$K$ & bracket count & Number of marginal tax brackets ($K = 7$ for 2026 MFJ) \\[3pt]
+$L_k,\,U_k$ & bracket bounds & Lower and upper income thresholds for bracket $k$;
+              $L_0 = 0$, $U_{K-1} = \infty$ \\[3pt]
+$\tau_k$ & marginal rate & Marginal federal tax rate in bracket $k$;
+           $0 = \tau_{-1} < \tau_0 < \cdots < \tau_{K-1}$ \\[3pt]
+$\Delta\tau_k$ & rate increment & $\Delta\tau_k = \tau_k - \tau_{k-1}$;
+                used in the LP linearization \\[3pt]
+$\Delta$ & standard deduction & MFJ standard deduction; taxable income $= \max(0,\,I_t - \Delta)$ \\[3pt]
+$\mathcal{T}(I)$ & tax function & $\mathcal{T}(I) = \sum_{k=0}^{K-1}
+                  \Delta\tau_k\,\max\!\bigl(0,\;I - \Delta - L_k\bigr)$ \\[3pt]
+$s_{tk} \geq 0$ & bracket slack & LP auxiliary variable: $s_{tk} = \max(0,\,I_t - \Delta - L_k)$;
+                 allows $\mathcal{T}$ to enter the LP objective linearly \\[3pt]
+$\pi$ & early withdrawal rate & IRS penalty rate on Traditional IRA withdrawals
+        before age $59\tfrac{1}{2}$;\; $\pi = 0.10$ \\[3pt]
+$\pi_t$ & annual penalty & $\pi_t = \pi$ if $a_0+t < 59.5$, else $0$;\quad
+          adds cost $\pi_t\,w^d_t$ beyond income tax in year $t$ \\
+\bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{7\quad Required Minimum Distributions}
+
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$\nu_t$ & distribution period & IRS Uniform Lifetime Table factor for age $a_0 + t$;
+          defined for $a_0 + t \geq a_{\mathrm{RMD}}$, else $\infty$ \\[3pt]
+$\rho_t$ & RMD amount & $\rho_t = A^d_t / \nu_t$; minimum required withdrawal from
+           $A^d$ \\[3pt]
+& RMD constraint & $w^d_t \geq \rho_t$ \quad for $a_0 + t \geq a_{\mathrm{RMD}}$ \\
+\bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{8\quad Consumption and Objective}
+
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$c_t$ & after-tax consumption & Total spending available in year $t$:
+\[
+  c_t = w^m_t + w^d_t + w^r_t + y^{SS}_t + y^{emp}_t - \mathcal{T}(I_t) - \pi_t\,w^d_t
+\] \\[3pt]
+$C^*$ & optimal consumption & Constant annual after-tax consumption; the scalar
+        maximized by the primary objective \\[3pt]
+$S$ & simulations & Number of Monte Carlo paths ($S = 1{,}000$ baseline) \\[3pt]
+$\tilde{r}^{(s)}_t$ & path $s$ return & Stock return in year $t$ of simulation $s$ \\
+\bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{9\quad Benchmark Strategies}
+
+Two heuristic strategies serve as benchmarks for the optimizer.
+Each draws accounts in a fixed priority order until exhausted.
+
+\medskip
+\begin{tabular}{@{} L{2.6cm} L{4.4cm} L{6.5cm} @{}}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Description} \\
+\midrule
+$C^{\mathrm{mdr}}$ & muni-first consumption & Constant consumption achieved by drawing
+                    $A^m \to A^d \to A^r$ in order \\[3pt]
+$C^{\mathrm{drm}}$ & deferred-first consumption & Constant consumption achieved by drawing
+                    $A^d \to A^r \to A^m$ in order \\
+\bottomrule
+\end{tabular}
+
+\medskip\noindent
+Both benchmark levels $C^{\mathrm{mdr}}$ and $C^{\mathrm{drm}}$ are found by bisection
+(perfect foresight over the realized return path) and serve as lower bounds on the
+optimizer's $C^*$.
+
+\end{document}
