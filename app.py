@@ -40,6 +40,25 @@ st.markdown(
 with st.expander("How to use this tool", expanded=False):
     st.markdown(
         """
+        **Planning horizon and the two stages**
+
+        The tool organizes your financial life into two stages defined by three age inputs:
+        your **current age**, your **retirement age**, and your **life expectancy**.
+
+        - **Stage 1 (current age → retirement age):** You are still earning employment income.
+          The optimizer can supplement that income with account withdrawals if needed, but the
+          primary goal is to let savings continue growing toward retirement.
+        - **Stage 2 (retirement age → life expectancy):** Employment income stops. All spending
+          must come from the three savings accounts — muni/cash, Traditional IRA, and Roth —
+          plus any Social Security benefits (which begin at the separate SS start age you specify,
+          and can fall in either stage).
+
+        The optimizer jointly plans withdrawals across **both** stages simultaneously, so decisions
+        made in Stage 1 (such as drawing down the traditional IRA early to reduce future RMD
+        exposure) are evaluated against their downstream tax consequences in Stage 2.
+
+        ---
+
         This tool finds the optimal annual withdrawal strategy from three retirement accounts —
         a **municipal bond (muni/cash)** account, a **Traditional IRA/401(k)**, and a **Roth IRA** —
         across thousands of simulated stock-return scenarios.
