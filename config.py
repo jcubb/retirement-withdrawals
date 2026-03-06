@@ -1,7 +1,7 @@
 # config.py — Default parameters and constants
 
 # ── Individual parameters ──────────────────────────────────────────────────
-START_AGE = 59
+START_AGE = 56
 DEATH_AGE = 92
 INITIAL_CASH = 500_000        # taxable muni-bond account
 INITIAL_RETIREMENT = 2_000_000  # tax-deferred retirement account (IRA/401k)

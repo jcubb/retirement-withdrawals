@@ -209,6 +209,59 @@ def plot_consumption(results_df, title=None, save_path=None):
     return fig
 
 
+def plot_consumption_quantiles(results_df, title=None, save_path=None):
+    """
+    Three-panel quantile (inverse CDF) plot comparing annual consumption
+    distributions across Optimal, CRT, and TRC strategies.
+
+    X-axis: percentile (5th–95th). Y-axis: annual consumption ($), shared
+    across panels. A dashed median reference line is drawn on each panel.
+    """
+    opt = results_df.groupby("sim_id")["consumption"].mean()
+    crt = results_df.groupby("sim_id")["consumption_crt"].mean()
+    trc = results_df.groupby("sim_id")["consumption_trc"].mean()
+
+    # pcts descending: 95→5; prob = 100-pcts ascending: 5→95
+    # q_vals descend (high→low consumption), giving a downward-sloping curve
+    pcts = np.linspace(95, 5, 500)
+    prob = 100 - pcts   # probability of sustaining at least q_vals[i], 5%→95%
+
+    panels = [
+        (opt, "Optimal",               "forestgreen"),
+        (crt, "CRT  (Cash→Roth→Trad)", "steelblue"),
+        (trc, "TRC  (Trad→Roth→Cash)", "darkorange"),
+    ]
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5), sharey=True)
+    fig.suptitle(title or "Simulated Sustainable Annual After-Tax Income, by Strategy", fontsize=13)
+
+    for ax, (series, label, color) in zip(axes, panels):
+        q_vals = np.percentile(series, pcts)
+        med    = float(np.median(series))
+
+        ax.plot(prob, q_vals, color=color, lw=2.5)
+        ax.axvline(50, color=color, lw=1.0, linestyle="--", alpha=0.55,
+                   label=f"50%: ${med/1_000:.0f}k")
+
+        ax.set_title(label, fontsize=11)
+        ax.set_xlabel("Probability of Sustaining")
+        ax.set_xlim(0, 100)
+        ax.set_xticks([0, 25, 50, 75, 100])
+        ax.xaxis.set_major_formatter(
+            mticker.FuncFormatter(lambda x, _: f"{int(x)}%")
+        )
+        ax.grid(True, alpha=0.25, linestyle="--")
+        ax.legend(fontsize=8)
+        _dollar_fmt(ax)
+
+    axes[0].set_ylabel("After-Tax Income")
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150)
+    return fig
+
+
 def plot_marginal_rates(results_df, title=None, save_path=None):
     """
     Plot median ± percentile bands for the top marginal tax rate vs age.

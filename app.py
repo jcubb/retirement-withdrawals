@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from simulation import build_params, run_simulations
 from analysis import (
-    plot_consumption,
+    plot_consumption_quantiles,
     plot_account_balances,
     plot_withdrawal_paths,
     plot_marginal_rates,
@@ -54,7 +54,7 @@ with st.expander("How to use this tool", expanded=False):
           and can fall in either stage).
 
         The optimizer jointly plans withdrawals across **both** stages simultaneously, so decisions
-        made in Stage 1 (such as drawing down the traditional IRA early to reduce future RMD
+        made in Stage 1 (such as drawing down the traditional IRA early to reduce future required minimum distribution (RMD)
         exposure) are evaluated against their downstream tax consequences in Stage 2.
 
         ---
@@ -80,6 +80,12 @@ with st.expander("How to use this tool", expanded=False):
         **CRT** (Cash → Roth → Traditional) and **TRC** (Traditional → Roth → Cash) —
         which draw from accounts in a fixed priority order and serve as lower bounds on
         what the optimizer achieves.
+
+        **Results**
+        
+        Some of the key results are contained in the first chart, which shows the probability of being 
+        able to sustain different levels of after-tax income when following the optimal withdrawal strategy. 
+        The median and 95% worst case values are also shown in the summary table at the top.
         """
     )
 
@@ -143,10 +149,6 @@ with st.sidebar:
         help="Gross annual Social Security benefit once payments begin. 85% of SS benefits are typically included in taxable income. The maximum combined benefit for a couple who both wait until age 70 is approximately $120,000 as of 2026.",
     )
     st.caption(f"${ss_annual:,.0f}")
-    ss_frac_pct = st.slider(
-        "Taxable SS fraction (%)", 0, 100, int(cfg.SS_TAXABLE_FRAC * 100),
-        help="Share of Social Security benefits included in taxable income. Under current law this is 85% for most retirees; lower values apply at lower income levels.",
-    )
 
     st.subheader("Other Income")
     extra_income = st.number_input(
@@ -192,7 +194,8 @@ with tab_sim:
         )
         use_seed = st.checkbox("Fix random seed", value=True)
         seed_val = (
-            st.number_input("Seed", min_value=0, max_value=99_999, value=cfg.RANDOM_SEED)
+            st.number_input("Seed", min_value=0, max_value=99_999, value=cfg.RANDOM_SEED,
+                            help="Integer used to initialize the random number generator. Fixing the seed makes results fully reproducible — the same seed always produces the same stock-return paths. Change the seed to see how results vary across different random draws.")
             if use_seed else None
         )
 
@@ -211,7 +214,7 @@ with tab_sim:
             "retirement_muni_alloc": ret_muni_pct  / 100.0,
             "roth_muni_alloc":       roth_muni_pct / 100.0,
             "ss_annual":             float(ss_annual),
-            "ss_taxable_frac":       ss_frac_pct   / 100.0,
+            "ss_taxable_frac":       cfg.SS_TAXABLE_FRAC,
             "extra_income":          float(extra_income),
             "muni_rate":             muni_rate_pct  / 100.0,
             "stock_mean":            stock_mean_pct / 100.0,
@@ -250,29 +253,32 @@ with tab_results:
 
         # ── Summary metrics ───────────────────────────────────────────────
         st.subheader("Summary")
+        annual_consumption = df.groupby("sim_id")["consumption"].mean()
+        p5_annual = annual_consumption.quantile(0.05)
+
         c1, c2, c3, c4, c5, c6 = st.columns(6)
-        c1.metric("Simulations solved",
-                  f"{s['n_solved']:,} / {s['n_simulations']:,}")
-        c2.metric("Median wealth at retirement",
+        c1.metric("Median wealth at retirement",
                   f"${s.get('median_wealth_at_retirement', 0):,.0f}")
-        c3.metric("Median annual consumption",
+        c2.metric("Median annual after-tax income",
                   f"${s.get('median_annual_consumption', 0):,.0f}")
-        c4.metric("Median lifetime consumption",
+        c3.metric("95% chance min after-tax income",
+                  f"${p5_annual:,.0f}")
+        c4.metric("Median lifetime after-tax income",
                   f"${s.get('median_total_consumption', 0):,.0f}")
         c5.metric("Median lifetime taxes",
                   f"${s.get('median_total_taxes', 0):,.0f}")
-        c6.metric("Mean lifetime taxes",
-                  f"${s.get('mean_total_taxes', 0):,.0f}")
+        c6.metric("Simulations solved",
+                  f"{s['n_solved']:,} / {s['n_simulations']:,}")
 
         st.divider()
 
         # ── Plots ─────────────────────────────────────────────────────────
         for label, fn in [
-            ("Consumption",         plot_consumption),
-            ("Account Balances",    plot_account_balances),
-            ("Withdrawals",         plot_withdrawal_paths),
-            ("Marginal Tax Rates",  plot_marginal_rates),
-            ("Tax Distribution",    plot_tax_distribution),
+            ("After-Tax Income",  plot_consumption_quantiles),
+            ("Account Balances",  plot_account_balances),
+            ("Withdrawals",               plot_withdrawal_paths),
+            ("Marginal Tax Rates",        plot_marginal_rates),
+            ("Tax Distribution",          plot_tax_distribution),
         ]:
             st.subheader(label)
             fig = fn(df)
