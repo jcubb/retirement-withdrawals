@@ -94,6 +94,10 @@ with st.expander("How to use this tool", expanded=False):
         Some of the key results are contained in the first chart, which shows the probability of being 
         able to sustain different levels of after-tax income when following the optimal withdrawal strategy. 
         The median and 95% worst case values are also shown in the summary table at the top.
+
+        ---
+
+        If you want all of the gory details, here is a [technical explanatory paper](https://github.com/jcubb/retirement-withdrawals/blob/master/paper/paper.pdf)!
         """
     )
 
