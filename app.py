@@ -23,6 +23,11 @@ st.set_page_config(
     layout="wide",
 )
 st.title("Retirement Planning & Tax Optimizer")
+st.caption(
+    "⚠️ **Disclaimer:** For educational and illustrative purposes only. "
+    "Not financial, tax, investment, or legal advice. "
+    "Consult a qualified financial advisor before making retirement planning decisions."
+)
 
 st.markdown(
     """
