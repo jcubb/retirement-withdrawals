@@ -26,7 +26,7 @@
 % ── Notation shorthands ───────────────────────────────────────────────────────
 \newcommand{\Tax}{\mathcal{T}}
 \newcommand{\Copt}{C^{*}}
-\newcommand{\Cmdr}{C^{\mathrm{mdr}}}
+\newcommand{\Cmdr}{C^{\mathrm{mrd}}}
 \newcommand{\Cdrm}{C^{\mathrm{drm}}}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -211,25 +211,23 @@ may earn employment income before retirement, and may receive pension income:
   y^{SS}_t    &= \bar{y}^{SS} \cdot \mathbf{1}\bigl[a_0 + t \geq a_{SS}\bigr],
   \label{eq:ss} \\
   y^{emp}_t   &= \bar{y}^{emp} \cdot \mathbf{1}\bigl[a_0 + t < a_{\mathrm{ret}}\bigr],
-  \label{eq:emp}
-  \
-  y^{pen}_t   &= ar{y}^{pen} \cdot \mathbf{1}igl[a_0 + t \geq a_{\mathrm{ret}}igr],
+  \label{eq:emp} \\
+  y^{pen}_t   &= \bar{y}^{pen} \cdot \mathbf{1}\bigl[a_0 + t \geq a_{\mathrm{ret}}\bigr],
   \label{eq:pen}
 \end{align}
 where $\bar{y}^{SS}$ is the elected annual Social Security benefit, $a_{SS}$
-where $ar{y}^{SS}$ is the elected annual Social Security benefit, $a_{SS}$
-is the claiming age, $ar{y}^{emp}$ is annual pre-retirement earned income,
-$ar{y}^{pen}$ is the annual pension benefit, and $a_{\mathrm{ret}}$ is the age
+is the claiming age, $\bar{y}^{emp}$ is annual pre-retirement earned income,
+$\bar{y}^{pen}$ is the annual pension benefit, and $a_{\mathrm{ret}}$ is the age
 at which employment income ceases and pension income begins.
-income; we set the taxable fraction $\phi = 0.85$. Municipal-bond interest
-and Roth withdrawals are excluded from ordinary income. The taxable ordinary
+Social Security income is partially taxable ($\phi = 0.85$); employment and pension income are fully taxable.
+Municipal-bond interest and Roth withdrawals are excluded from ordinary income. The taxable ordinary
 income in year $t$ is therefore
 \begin{equation}
   I_t \;=\; w^d_t + \phi\,y^{SS}_t + y^{emp}_t + y^{pen}_t.
   \label{eq:income}
 \end{equation}
 Pension income $y^{pen}_t$ is fully included in ordinary income beginning at
-retirement age; setting $ar{y}^{pen} = 0$ recovers the no-pension baseline.
+retirement age; setting $\bar{y}^{pen} = 0$ recovers the no-pension baseline.
 
 
 \subsection{Federal Income Tax}
@@ -406,7 +404,7 @@ convex, so it cannot appear directly in an LP. We handle it by introducing
 \emph{bracket slack variables} $s_{tk} \geq 0$ defined to satisfy
 \begin{equation}
   s_{tk} \;=\; \max\!\bigl(0,\; I_t - \Delta - L_k\bigr)
-         \;=\; \max\!igl(0,\; w^d_t + \phi\,y^{SS}_t + y^{emp}_t + y^{pen}_t - \Delta - L_kigr).
+         \;=\; \max\!\bigl(0,\; w^d_t + \phi\,y^{SS}_t + y^{emp}_t + y^{pen}_t - \Delta - L_k\bigr).
   \label{eq:slack_def}
 \end{equation}
 With this definition, the tax on year-$t$ income is exactly
@@ -482,7 +480,7 @@ For each path we:
         $\{w^{m*}_t, w^{d*}_t, w^{r*}_t\}$ and constant consumption $C^{*(s)}$.
   \item Compute account balance paths $A^j_t$, taxes $\Tax(I_t)$,
         and effective marginal rates from the solution.
-  \item Compute both benchmark consumption levels $C^{\mathrm{mdr}(s)}$ and
+  \item Compute both benchmark consumption levels $C^{\mathrm{mrd}(s)}$ and
         $C^{\mathrm{drm}(s)}$ by bisection (Section~\ref{sec:benchmarks}).
 \end{enumerate}
 
@@ -499,7 +497,7 @@ heuristic strategies that observe the same realized return path but follow a
 fixed account-priority ordering rather than solving an LP.
 
 \subsubsection*{Muni-first (\texorpdfstring{$\Cmdr$}{C-mdr}):
-  $A^m \to A^d \to A^r$}
+  $A^m \to A^r \to A^d$}
 
 Draw first from the municipal-bond account until it is exhausted, then from
 the Roth, then from the traditional IRA. In each year, the withdrawal from
@@ -528,7 +526,7 @@ rather than required to hit exactly zero), and both use perfect foresight
 over the realized return path. The optimizer has strictly more freedom: it
 can mix withdrawals across accounts in any year, is not constrained to a
 priority ordering, and jointly optimizes the tax consequences of all
-decisions. Therefore $C^{*(s)} \geq \max(C^{\mathrm{mdr}(s)}, C^{\mathrm{drm}(s)})$
+decisions. Therefore $C^{*(s)} \geq \max(C^{\mathrm{mrd}(s)}, C^{\mathrm{drm}(s)})$
 for every path $s$, and the gap between $\Copt$ and the benchmarks measures
 the value of joint optimization relative to the best simple heuristic.
 
