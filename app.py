@@ -202,7 +202,7 @@ with tab_sim:
     with col_mc:
         st.subheader("Monte Carlo")
         n_sim = st.number_input(
-            "Number of simulations", min_value=10, max_value=10_000,
+            "Number of simulations (if on Render, start with 100 due to slow speeds)", min_value=10, max_value=10_000,
             value=cfg.N_SIMULATIONS, step=100,
             help="Number of independent stock-return paths to simulate. More simulations give more reliable percentile estimates at the cost of longer run time. 1,000 paths typically completes in about 30 seconds.",
         )
