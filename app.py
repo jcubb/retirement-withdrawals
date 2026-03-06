@@ -50,7 +50,7 @@ with st.expander("How to use this tool", expanded=False):
           primary goal is to let savings continue growing toward retirement.
         - **Stage 2 (retirement age → life expectancy):** Employment income stops. All spending
           must come from the three savings accounts — muni/cash, Traditional IRA, and Roth —
-          plus any Social Security benefits (which begin at the separate SS start age you specify,
+          plus any Pension Income, or Social Security benefits (which begin at the separate SS start age you specify,
           and can fall in either stage).
 
         The optimizer jointly plans withdrawals across **both** stages simultaneously, so decisions
@@ -65,11 +65,14 @@ with st.expander("How to use this tool", expanded=False):
         The optimizer chooses how much to draw from each account each year to maximize sustainable
         spending while minimizing lifetime federal income taxes.
 
-        | Account | Tax treatment | Notes |
+        | Source | Tax treatment | Notes |
         |---|---|---|
         | **Muni / Cash** | Federally tax-free | Fixed annual return; no RMDs |
         | **Traditional IRA** | Withdrawals are ordinary income | RMDs start at age 73; 10% penalty before age 59½ |
         | **Roth IRA** | Qualified withdrawals tax-free | No RMDs; no penalty |
+        | **Pre-retirement income** | Ordinary income | Earned income before retirement age; phases out at retirement |
+        | **Social Security** | 85% included in ordinary income | Begins at SS start age |
+        | **Pension** | Ordinary income | Defined-benefit or annuity income; begins at retirement age and continues through the planning horizon |
 
         **Steps**
         1. Enter your account balances, income details, and return assumptions in the **Setup** sidebar.
@@ -157,6 +160,12 @@ with st.sidebar:
         help="Employment or other earned income received before retirement age. Fully included in taxable ordinary income. Phases out to zero at the retirement age you set.",
     )
     st.caption(f"${extra_income:,.0f}")
+    pension_annual = st.number_input(
+        "Annual pension income ($/yr)",
+        min_value=0, max_value=1_000_000, value=cfg.PENSION_ANNUAL, step=5_000,
+        help="Defined-benefit pension or other annuity income that begins at retirement age and continues through the end of the planning horizon. Fully included in taxable ordinary income. Leave at $0 if you have no pension.",
+    )
+    st.caption(f"${pension_annual:,.0f}")
 
 
 # ── Main tabs ─────────────────────────────────────────────────────────────────
@@ -216,6 +225,7 @@ with tab_sim:
             "ss_annual":             float(ss_annual),
             "ss_taxable_frac":       cfg.SS_TAXABLE_FRAC,
             "extra_income":          float(extra_income),
+            "pension_annual":        float(pension_annual),
             "muni_rate":             muni_rate_pct  / 100.0,
             "stock_mean":            stock_mean_pct / 100.0,
             "stock_std":             stock_std_pct  / 100.0,

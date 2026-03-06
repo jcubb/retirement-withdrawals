@@ -37,7 +37,7 @@ _DELTA_RATES = np.array(_DELTA_RATES)
 _THRESHOLDS  = np.array(_THRESHOLDS)
 
 
-def _solve_variance_qp(ss, emp, ss_tax, pen, G, H, G3, A1_0, A2_0, A3_0, start_age):
+def _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0, start_age):
     """
     Solve QP to minimize variance of annual after-tax consumption.
 
@@ -56,20 +56,21 @@ def _solve_variance_qp(ss, emp, ss_tax, pen, G, H, G3, A1_0, A2_0, A3_0, start_a
     K = _K
 
     sc = 1e6
-    ss_s     = ss     / sc
-    emp_s    = emp    / sc
-    ss_tax_s = ss_tax / sc
-    A1_s     = A1_0  / sc
-    A2_s     = A2_0  / sc
-    A3_s     = A3_0  / sc
-    thresh_s = _THRESHOLDS / sc
+    ss_s      = ss      / sc
+    emp_s     = emp     / sc
+    ss_tax_s  = ss_tax  / sc
+    pension_s = pension / sc
+    A1_s      = A1_0   / sc
+    A2_s      = A2_0   / sc
+    A3_s      = A3_0   / sc
+    thresh_s  = _THRESHOLDS / sc
 
     w1 = cp.Variable(T, nonneg=True)
     w2 = cp.Variable(T, nonneg=True)
     w3 = cp.Variable(T, nonneg=True)
     s  = cp.Variable((T, K), nonneg=True)
 
-    c_expr = w1 + cp.multiply(1.0 - pen, w2) + w3 + (ss_s + emp_s) - (s @ _DELTA_RATES)
+    c_expr = w1 + cp.multiply(1.0 - pen, w2) + w3 + (ss_s + emp_s + pension_s) - (s @ _DELTA_RATES)
     c_mean = cp.sum(c_expr) / T
     obj = cp.Minimize(cp.sum_squares(c_expr - c_mean) + 1e-3 * cp.sum(s))
 
@@ -91,7 +92,7 @@ def _solve_variance_qp(ss, emp, ss_tax, pen, G, H, G3, A1_0, A2_0, A3_0, start_a
     ]
 
     for t in range(T):
-        constraints.append(w2[t] - s[t, :] <= thresh_s - ss_tax_s[t] - emp_s[t])
+        constraints.append(w2[t] - s[t, :] <= thresh_s - ss_tax_s[t] - emp_s[t] - pension_s[t])
 
     # RMD applies to A2 (traditional) only; Roth has no RMD
     rmd_A, rmd_b = [], []
@@ -161,10 +162,13 @@ def optimize_withdrawals(r_stock_path, params):
     T = death_age - start_age
     K = _K
 
+    pension_annual = params.get("pension_annual", 0.0)
+
     # ── Exogenous income arrays ───────────────────────────────────────────
-    ss     = np.array([ss_annual if (start_age + t) >= ss_start else 0.0 for t in range(T)])
-    emp    = np.array([extra_inc if (start_age + t) < ret_age   else 0.0 for t in range(T)])
-    ss_tax = ss_frac * ss
+    ss      = np.array([ss_annual     if (start_age + t) >= ss_start else 0.0 for t in range(T)])
+    emp     = np.array([extra_inc     if (start_age + t) < ret_age   else 0.0 for t in range(T)])
+    pension = np.array([pension_annual if (start_age + t) >= ret_age  else 0.0 for t in range(T)])
+    ss_tax  = ss_frac * ss
 
     # Early withdrawal penalty: 10% on traditional IRA withdrawals before age 59.5
     pen = np.array([0.10 if (start_age + t) < 59.5 else 0.0 for t in range(T)])
@@ -188,7 +192,7 @@ def optimize_withdrawals(r_stock_path, params):
 
     # ── QP branch: minimize variance of annual consumption ────────────────
     if objective == "minimize_variance_consumption":
-        qp_out = _solve_variance_qp(ss, emp, ss_tax, pen, G, H, G3, A1_0, A2_0, A3_0, start_age)
+        qp_out = _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0, start_age)
         if qp_out is None:
             return None
         w1_opt, w2_opt, w3_opt = qp_out
@@ -230,7 +234,7 @@ def optimize_withdrawals(r_stock_path, params):
                 row[i2(t)]     =  1.0
                 row[is_(t, k)] = -1.0
                 ub_rows.append(row)
-                ub_rhs.append(_THRESHOLDS[k] - ss_tax[t] - emp[t])
+                ub_rhs.append(_THRESHOLDS[k] - ss_tax[t] - emp[t] - pension[t])
 
         # A1[t] >= 0
         for t in range(1, T + 1):
@@ -290,7 +294,7 @@ def optimize_withdrawals(r_stock_path, params):
                 for k in range(K):
                     cons_A[t, is_(t, k)] = -_DELTA_RATES[k]
                 cons_A[t, i_C] = -1.0
-            cons_b = -(ss + emp)   # shape (T,)
+            cons_b = -(ss + emp + pension)   # shape (T,)
 
             # Terminal equality dropped: A[T] >= 0 already enforced by balance
             # constraints; maximize-C naturally drains accounts.
@@ -345,14 +349,14 @@ def optimize_withdrawals(r_stock_path, params):
         A3_path[t + 1] = (A3_path[t] - w3_opt[t]) * (1.0 + r3[t])
 
     income_tax = np.array([
-        compute_tax_scalar(w2_opt[t] + ss_tax[t] + emp[t])
+        compute_tax_scalar(w2_opt[t] + ss_tax[t] + emp[t] + pension[t])
         for t in range(T)
     ])
     taxes       = income_tax + pen * w2_opt   # income tax + early withdrawal penalty
-    income      = w2_opt + ss_tax + emp
-    consumption = w1_opt + w2_opt + w3_opt + ss + emp - taxes
+    income      = w2_opt + ss_tax + emp + pension
+    consumption = w1_opt + w2_opt + w3_opt + ss + emp + pension - taxes
     marg_rates  = np.array([
-        _marginal_rate(w2_opt[t] + ss_tax[t] + emp[t])
+        _marginal_rate(w2_opt[t] + ss_tax[t] + emp[t] + pension[t])
         for t in range(T)
     ])
 
@@ -372,7 +376,7 @@ def optimize_withdrawals(r_stock_path, params):
     }
 
 
-def _sim_crt(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
+def _sim_crt(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0):
     """
     Simulate Cash → Roth → Traditional ordering with constant consumption target C.
 
@@ -385,12 +389,12 @@ def _sim_crt(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
     cons = np.zeros(T)
 
     for t in range(T):
-        st, et, sst = ss[t], emp[t], ss_tax[t]
+        st, et, sst, pt = ss[t], emp[t], ss_tax[t], pension[t]
         pen_t = pen[t]
 
         # Amount needed from tax-free sources when w2=0
-        tax0 = compute_tax_scalar(sst + et)
-        needed_tf = C - st - et + tax0   # w1 + w3 required if w2 = 0
+        tax0 = compute_tax_scalar(sst + et + pt)
+        needed_tf = C - st - et - pt + tax0   # w1 + w3 required if w2 = 0
 
         if needed_tf <= A1:
             w1 = max(0.0, needed_tf)
@@ -403,16 +407,16 @@ def _sim_crt(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
         else:
             w1 = A1
             w3 = A3
-            target = C - w1 - w3 - st - et
-            def f(x, pen_t=pen_t):
-                return x * (1 - pen_t) - compute_tax_scalar(x + sst + et) - target
+            target = C - w1 - w3 - st - et - pt
+            def f(x, pen_t=pen_t, pt=pt):
+                return x * (1 - pen_t) - compute_tax_scalar(x + sst + et + pt) - target
             w2 = (0.0 if f(0.0) >= 0.0 else
                   A2  if f(A2)  <= 0.0 else
                   brentq(f, 0.0, A2, xtol=1.0))
 
-        income_tax = compute_tax_scalar(w2 + sst + et)
+        income_tax = compute_tax_scalar(w2 + sst + et + pt)
         taxes   = income_tax + pen_t * w2
-        cons[t] = w1 + w3 + w2 + st + et - taxes
+        cons[t] = w1 + w3 + w2 + st + et + pt - taxes
         A1 = max(0.0, (A1 - w1) * (1.0 + r_muni))
         A3 = max(0.0, (A3 - w3) * (1.0 + r3[t]))
         A2 = max(0.0, (A2 - w2) * (1.0 + r2[t]))
@@ -420,7 +424,7 @@ def _sim_crt(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
     return cons, A1, A2, A3
 
 
-def _sim_trc(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
+def _sim_trc(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0):
     """
     Simulate Traditional → Roth → Cash ordering with constant consumption target C.
 
@@ -433,21 +437,21 @@ def _sim_trc(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
     cons = np.zeros(T)
 
     for t in range(T):
-        st, et, sst = ss[t], emp[t], ss_tax[t]
+        st, et, sst, pt = ss[t], emp[t], ss_tax[t], pension[t]
         pen_t = pen[t]
 
-        def f_w2(x, pen_t=pen_t):
-            return x * (1 - pen_t) + st + et - compute_tax_scalar(x + sst + et) - C
+        def f_w2(x, pen_t=pen_t, pt=pt):
+            return x * (1 - pen_t) + st + et + pt - compute_tax_scalar(x + sst + et + pt) - C
 
         if f_w2(0.0) >= 0.0:
-            # SS + emp alone covers C; no withdrawals needed
+            # SS + emp + pension alone covers C; no withdrawals needed
             w2 = 0.0
             w3 = 0.0
             w1 = 0.0
         elif f_w2(A2) <= 0.0:
             # A2 exhausted; supplement from Roth then cash
             w2 = A2
-            cons_trad = A2 * (1 - pen_t) + st + et - compute_tax_scalar(A2 + sst + et)
+            cons_trad = A2 * (1 - pen_t) + st + et + pt - compute_tax_scalar(A2 + sst + et + pt)
             remaining = C - cons_trad
             if remaining <= 0.0:
                 w3 = 0.0
@@ -463,9 +467,9 @@ def _sim_trc(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
             w3 = 0.0
             w1 = 0.0
 
-        income_tax = compute_tax_scalar(w2 + sst + et)
+        income_tax = compute_tax_scalar(w2 + sst + et + pt)
         taxes   = income_tax + pen_t * w2
-        cons[t] = w1 + w3 + w2 + st + et - taxes
+        cons[t] = w1 + w3 + w2 + st + et + pt - taxes
         A2 = max(0.0, (A2 - w2) * (1.0 + r2[t]))
         A3 = max(0.0, (A3 - w3) * (1.0 + r3[t]))
         A1 = max(0.0, (A1 - w1) * (1.0 + r_muni))
@@ -473,7 +477,7 @@ def _sim_trc(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
     return cons, A1, A2, A3
 
 
-def _raw_terminal_crt(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
+def _raw_terminal_crt(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0):
     """
     Uncapped terminal A2 balance for the CRT strategy (for bisection).
 
@@ -487,13 +491,13 @@ def _raw_terminal_crt(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0)
     A2_raw = float(A2_0)   # uncapped
 
     for t in range(T):
-        st, et, sst = ss[t], emp[t], ss_tax[t]
+        st, et, sst, pt = ss[t], emp[t], ss_tax[t], pension[t]
         A1_avail = max(0.0, A1)
         A3_avail = max(0.0, A3)
         pen_t = pen[t]
 
-        tax0      = compute_tax_scalar(sst + et)
-        needed_tf = C - st - et + tax0
+        tax0      = compute_tax_scalar(sst + et + pt)
+        needed_tf = C - st - et - pt + tax0
 
         if needed_tf <= A1_avail:
             w1 = max(0.0, needed_tf)
@@ -506,9 +510,9 @@ def _raw_terminal_crt(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0)
         else:
             w1     = A1_avail
             w3     = A3_avail
-            target = C - w1 - w3 - st - et
-            def f(x, pen_t=pen_t):
-                return x * (1 - pen_t) - compute_tax_scalar(x + sst + et) - target
+            target = C - w1 - w3 - st - et - pt
+            def f(x, pen_t=pen_t, pt=pt):
+                return x * (1 - pen_t) - compute_tax_scalar(x + sst + et + pt) - target
             if f(0.0) >= 0.0:
                 w2 = 0.0
             else:
@@ -522,7 +526,7 @@ def _raw_terminal_crt(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0)
     return A2_raw   # > 0 if surplus, < 0 if overdraft
 
 
-def _raw_terminal_trc(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0):
+def _raw_terminal_trc(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0):
     """
     Uncapped terminal A1 balance for the TRC strategy (for bisection).
 
@@ -535,13 +539,13 @@ def _raw_terminal_trc(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0)
     A1_raw = float(A1_0)   # uncapped
 
     for t in range(T):
-        st, et, sst = ss[t], emp[t], ss_tax[t]
+        st, et, sst, pt = ss[t], emp[t], ss_tax[t], pension[t]
         A2_avail = max(0.0, A2)
         A3_avail = max(0.0, A3)
         pen_t = pen[t]
 
-        def f_w2(x, pen_t=pen_t):
-            return x * (1 - pen_t) + st + et - compute_tax_scalar(x + sst + et) - C
+        def f_w2(x, pen_t=pen_t, pt=pt):
+            return x * (1 - pen_t) + st + et + pt - compute_tax_scalar(x + sst + et + pt) - C
 
         if f_w2(0.0) >= 0.0:
             w2 = 0.0
@@ -549,7 +553,7 @@ def _raw_terminal_trc(C, ss, emp, ss_tax, pen, r_muni, r2, r3, A1_0, A2_0, A3_0)
             w1 = 0.0
         elif f_w2(A2_avail) <= 0.0:
             w2 = A2_avail
-            cons_trad = A2_avail * (1 - pen_t) + st + et - compute_tax_scalar(A2_avail + sst + et)
+            cons_trad = A2_avail * (1 - pen_t) + st + et + pt - compute_tax_scalar(A2_avail + sst + et + pt)
             remaining = C - cons_trad
             if remaining <= 0.0:
                 w3 = 0.0
@@ -610,16 +614,19 @@ def benchmark_consumptions(r_stock_path, params):
     extra_inc = params["extra_income"]
     ret_age   = params["retirement_age"]
 
-    T = death_age - start_age
-    ss     = np.array([ss_annual if (start_age + t) >= ss_start else 0.0 for t in range(T)])
-    emp    = np.array([extra_inc if (start_age + t) < ret_age   else 0.0 for t in range(T)])
-    ss_tax = ss_frac * ss
-    pen    = np.array([0.10 if (start_age + t) < 59.5 else 0.0 for t in range(T)])
-    r2     = alpha  * r_muni + (1.0 - alpha)  * r_stock_path
-    r3     = alpha3 * r_muni + (1.0 - alpha3) * r_stock_path
+    pension_annual = params.get("pension_annual", 0.0)
 
-    kw = dict(ss=ss, emp=emp, ss_tax=ss_tax, pen=pen, r_muni=r_muni, r2=r2, r3=r3,
-              A1_0=A1_0, A2_0=A2_0, A3_0=A3_0)
+    T = death_age - start_age
+    ss      = np.array([ss_annual     if (start_age + t) >= ss_start else 0.0 for t in range(T)])
+    emp     = np.array([extra_inc     if (start_age + t) < ret_age   else 0.0 for t in range(T)])
+    pension = np.array([pension_annual if (start_age + t) >= ret_age  else 0.0 for t in range(T)])
+    ss_tax  = ss_frac * ss
+    pen     = np.array([0.10 if (start_age + t) < 59.5 else 0.0 for t in range(T)])
+    r2      = alpha  * r_muni + (1.0 - alpha)  * r_stock_path
+    r3      = alpha3 * r_muni + (1.0 - alpha3) * r_stock_path
+
+    kw = dict(ss=ss, emp=emp, ss_tax=ss_tax, pen=pen, pension=pension,
+              r_muni=r_muni, r2=r2, r3=r3, A1_0=A1_0, A2_0=A2_0, A3_0=A3_0)
 
     def find_C(terminal_fn):
         """Find C where terminal_fn crosses zero (monotone decreasing in C)."""

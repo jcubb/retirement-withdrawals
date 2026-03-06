@@ -127,7 +127,10 @@ $\phi$ & SS taxable fraction & Share of $y^{SS}_t$ included in ordinary income; 
 $\bar{y}^{emp}$ & annual employment & Pre-retirement earned income (e.g.\ part-time work) \\[3pt]
 $y^{emp}_t$ & employment income & $y^{emp}_t = \bar{y}^{emp}$ for $a_0+t < a_{\mathrm{ret}}$,
               else $0$ \\[3pt]
-$I_t$ & ordinary income & Taxable income: \;$I_t = w^d_t + \phi\,y^{SS}_t + y^{emp}_t$ \\
+$ar{y}^{pen}$ & annual pension & Defined-benefit pension or annuity income beginning at retirement \[3pt]
+$y^{pen}_t$ & pension income & $y^{pen}_t = ar{y}^{pen}$ for $a_0+t \geq a_{\mathrm{ret}}$,
+              else $0$; fully included in ordinary income \[3pt]
+$I_t$ & ordinary income & Taxable income: \;$I_t = w^d_t + \phi\,y^{SS}_t + y^{emp}_t + y^{pen}_t$ \
 \bottomrule
 \end{tabular}
 

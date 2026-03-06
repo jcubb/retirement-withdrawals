@@ -205,26 +205,32 @@ exploited in the LP formulation (Section~\ref{sec:lp}).
 \subsection{Income}
 \label{sec:income}
 
-Beyond account withdrawals, the individual receives Social Security benefits
-and may earn employment income before retirement:
+Beyond account withdrawals, the individual receives Social Security benefits,
+may earn employment income before retirement, and may receive pension income:
 \begin{align}
   y^{SS}_t    &= \bar{y}^{SS} \cdot \mathbf{1}\bigl[a_0 + t \geq a_{SS}\bigr],
   \label{eq:ss} \\
   y^{emp}_t   &= \bar{y}^{emp} \cdot \mathbf{1}\bigl[a_0 + t < a_{\mathrm{ret}}\bigr],
   \label{eq:emp}
+  \
+  y^{pen}_t   &= ar{y}^{pen} \cdot \mathbf{1}igl[a_0 + t \geq a_{\mathrm{ret}}igr],
+  \label{eq:pen}
 \end{align}
 where $\bar{y}^{SS}$ is the elected annual Social Security benefit, $a_{SS}$
-is the claiming age, $\bar{y}^{emp}$ is annual pre-retirement earned income,
-and $a_{\mathrm{ret}}$ is the age at which employment income ceases.
-
-Federal tax law includes up to 85\% of Social Security benefits in ordinary
+where $ar{y}^{SS}$ is the elected annual Social Security benefit, $a_{SS}$
+is the claiming age, $ar{y}^{emp}$ is annual pre-retirement earned income,
+$ar{y}^{pen}$ is the annual pension benefit, and $a_{\mathrm{ret}}$ is the age
+at which employment income ceases and pension income begins.
 income; we set the taxable fraction $\phi = 0.85$. Municipal-bond interest
 and Roth withdrawals are excluded from ordinary income. The taxable ordinary
 income in year $t$ is therefore
 \begin{equation}
-  I_t \;=\; w^d_t + \phi\,y^{SS}_t + y^{emp}_t.
+  I_t \;=\; w^d_t + \phi\,y^{SS}_t + y^{emp}_t + y^{pen}_t.
   \label{eq:income}
 \end{equation}
+Pension income $y^{pen}_t$ is fully included in ordinary income beginning at
+retirement age; setting $ar{y}^{pen} = 0$ recovers the no-pension baseline.
+
 
 \subsection{Federal Income Tax}
 \label{sec:tax}
@@ -315,12 +321,12 @@ muni and Roth draws instead.
 After-tax consumption in year $t$ is total income from all sources minus
 federal income tax and any early withdrawal penalty:
 \begin{equation}
-  c_t \;=\; w^m_t + w^d_t + w^r_t + y^{SS}_t + y^{emp}_t
+  c_t \;=\; w^m_t + w^d_t + w^r_t + y^{SS}_t + y^{emp}_t + y^{pen}_t
            - \Tax(I_t) - \pi_t\,w^d_t,
   \label{eq:consumption}
 \end{equation}
 where $\pi_t$ is defined in~\eqref{eq:penalty_rate}. Equivalently,
-$c_t = w^m_t + (1-\pi_t)\,w^d_t + w^r_t + y^{SS}_t + y^{emp}_t - \Tax(I_t)$.
+$c_t = w^m_t + (1-\pi_t)\,w^d_t + w^r_t + y^{SS}_t + y^{emp}_t + y^{pen}_t - \Tax(I_t)$.
 Our primary objective is to find withdrawal schedules
 $\{w^m_t, w^d_t, w^r_t\}_{t=0}^{T-1}$ that maximize a constant annual
 after-tax consumption level $\Copt$ subject to $c_t = \Copt$ for every
@@ -400,7 +406,7 @@ convex, so it cannot appear directly in an LP. We handle it by introducing
 \emph{bracket slack variables} $s_{tk} \geq 0$ defined to satisfy
 \begin{equation}
   s_{tk} \;=\; \max\!\bigl(0,\; I_t - \Delta - L_k\bigr)
-         \;=\; \max\!\bigl(0,\; w^d_t + \phi\,y^{SS}_t + y^{emp}_t - \Delta - L_k\bigr).
+         \;=\; \max\!igl(0,\; w^d_t + \phi\,y^{SS}_t + y^{emp}_t + y^{pen}_t - \Delta - L_kigr).
   \label{eq:slack_def}
 \end{equation}
 With this definition, the tax on year-$t$ income is exactly
@@ -411,7 +417,7 @@ With this definition, the tax on year-$t$ income is exactly
 which is linear in the slack variables. The constraint
 $s_{tk} \geq I_t - \Delta - L_k$ is imposed as the LP inequality
 \begin{equation}
-  w^d_t - s_{tk} \;\leq\; \Delta + L_k - \phi\,y^{SS}_t - y^{emp}_t,
+  w^d_t - s_{tk} \;\leq\; \Delta + L_k - \phi\,y^{SS}_t - y^{emp}_t - y^{pen}_t,
   \qquad t = 0,\ldots,T-1,\; k = 0,\ldots,K-1.
   \label{eq:slack_ineq}
 \end{equation}
@@ -425,7 +431,7 @@ $c_t = \Copt$ and rearranging using~\eqref{eq:consumption} yields
 \begin{equation}
   w^m_t + (1-\pi_t)\,w^d_t + w^r_t
   - \sum_{k=0}^{K-1} \Delta\tau_k\, s_{tk} - \Copt
-  \;=\; -y^{SS}_t - y^{emp}_t,
+  \;=\; -y^{SS}_t - y^{emp}_t - y^{pen}_t,
   \qquad t = 0,\ldots,T-1,
   \label{eq:cc_lp}
 \end{equation}
@@ -771,7 +777,7 @@ One row per year $t = 0, \ldots, T-1$, enforcing constant after-tax consumption:
   x_{i_m(t)} + (1-\pi_t)\,x_{i_d(t)} + x_{i_r(t)}
   - \sum_{k=0}^{K-1} \Delta\tau_k\, x_{i_s(t,k)}
   - x_{i_C}
-  \;=\; -y^{SS}_t - y^{emp}_t.
+  \;=\; -y^{SS}_t - y^{emp}_t - y^{pen}_t.
 \]
 The coefficient $(1-\pi_t)$ on $x_{i_d(t)}$ incorporates the early
 withdrawal penalty~\eqref{eq:penalty_rate}; $\pi_t = 0$ for all years
@@ -783,7 +789,7 @@ All inequalities are of the form $\mathbf{A}_{\mathrm{ub}}\,\mathbf{x} \leq \mat
 \smallskip
 \textit{(a) Tax bracket slacks} ($TK$ rows):
 \[
-  x_{i_d(t)} - x_{i_s(t,k)} \;\leq\; \Delta + L_k - \phi\,y^{SS}_t - y^{emp}_t,
+  x_{i_d(t)} - x_{i_s(t,k)} \;\leq\; \Delta + L_k - \phi\,y^{SS}_t - y^{emp}_t - y^{pen}_t,
   \quad t = 0,\ldots,T-1,\; k = 0,\ldots,K-1.
 \]
 

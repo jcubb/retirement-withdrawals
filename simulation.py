@@ -25,6 +25,7 @@ def build_params(overrides=None):
         "ss_start_age":          cfg.SS_START_AGE,
         "ss_taxable_frac":       cfg.SS_TAXABLE_FRAC,
         "extra_income":          cfg.EXTRA_INCOME,
+        "pension_annual":        cfg.PENSION_ANNUAL,
         "retirement_age":        cfg.RETIREMENT_AGE,
         "n_simulations":         cfg.N_SIMULATIONS,
         "random_seed":           cfg.RANDOM_SEED,

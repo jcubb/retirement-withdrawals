@@ -19,6 +19,9 @@ SS_TAXABLE_FRAC = 0.85        # fraction of SS subject to ordinary income tax
 # Optional pre-retirement employment income (ages 59–retirement_age)
 EXTRA_INCOME = 0              # set > 0 to model part-time income
 
+# Optional pension income starting at retirement age (fully taxable)
+PENSION_ANNUAL = 0            # set > 0 to model a defined-benefit pension
+
 # ── Investment parameters ─────────────────────────────────────────────────
 MUNI_RATE = 0.03              # fixed annual return on muni bonds
 STOCK_MEAN = 0.07             # mean annual stock return
@@ -28,7 +31,7 @@ RETIREMENT_MUNI_ALLOC = 0.40  # fraction of retirement account in muni bonds
 ROTH_MUNI_ALLOC = 0.0         # Roth: 100% stocks (maximize tax-free compounding)
 
 # ── Simulation ────────────────────────────────────────────────────────────
-N_SIMULATIONS = 1_000
+N_SIMULATIONS = 500
 RANDOM_SEED = 42
 
 # ── Objective ─────────────────────────────────────────────────────────────
