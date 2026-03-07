@@ -28,6 +28,23 @@ st.caption(
     "Not financial, tax, investment, or legal advice. "
     "Consult a qualified financial advisor before making retirement planning decisions."
 )
+st.markdown("""
+<div class="mobile-hint">📱 Tap <b>≫</b> in the top-left corner to open the settings panel.</div>
+<style>
+.mobile-hint { display: none; }
+@media (max-width: 768px) {
+    .mobile-hint {
+        display: block;
+        padding: 0.5rem 0.75rem;
+        background: #e8f4fd;
+        border-left: 3px solid #1f77b4;
+        border-radius: 0.25rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown(
     """
