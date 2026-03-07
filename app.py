@@ -62,6 +62,10 @@ with st.expander("How to use this tool", expanded=False):
         made in Stage 1 (such as drawing down the traditional IRA early to reduce future required minimum distribution (RMD)
         exposure) are evaluated against their downstream tax consequences in Stage 2.
 
+        The asset allocation is very simple. Investments are either in tax free municipal bonds ("munis") with a fixed rate, or in
+        stocks with the user-specified return and volatility. Set the percentage of stocks in each retirement account
+        to most closely approximate your true asset allocation.
+
         ---
 
         This tool finds the optimal annual withdrawal strategy from three retirement accounts —
@@ -113,8 +117,10 @@ with st.sidebar:
     )
     ret_age = st.number_input(
         "Retirement age", min_value=40, max_value=80, value=cfg.RETIREMENT_AGE,
-        help="Age at which earned employment income stops. Pre-retirement income phases out at this age.",
+        help="Age at which earned employment income stops. If you are already retired, enter your actual retirement age even if it is before your current age — the optimizer will treat employment income as $0 and start pension income immediately.",
     )
+    if int(start_age) >= int(ret_age):
+        st.caption("Already retired — employment income is $0; pension income (if any) begins immediately.")
     ss_start = st.number_input(
         "SS start age", min_value=62, max_value=85, value=cfg.SS_START_AGE,
         help="Age at which Social Security payments begin. The model holds your benefit amount fixed at whatever you enter — it does not adjust for claiming age.",
@@ -145,13 +151,13 @@ with st.sidebar:
     st.caption(f"${initial_roth:,.0f}")
 
     st.subheader("Asset Allocation")
-    ret_muni_pct = st.slider(
-        "Traditional IRA: muni %", 0, 100, int(cfg.RETIREMENT_MUNI_ALLOC * 100),
-        help="Fraction of the Traditional IRA invested in bonds vs. equities. 0% = 100% equities; 40% means a 40/60 bond-equity mix. The blended return is (muni% × muni rate) + (equity% × stock return).",
+    ret_stock_pct = st.slider(
+        "Traditional IRA: stock %", 0, 100, int(cfg.RETIREMENT_STOCK_ALLOC * 100),
+        help="Percentage of the Traditional IRA invested in stocks. The remainder is in muni bonds. 60% stocks means a 60/40 stock-bond mix. The blended return is (stock% × stock return) + (bond% × muni rate).",
     )
-    roth_muni_pct = st.slider(
-        "Roth IRA: muni %", 0, 100, int(cfg.ROTH_MUNI_ALLOC * 100),
-        help="Fraction of the Roth IRA invested in bonds vs. equities. Defaults to 0% (all equities) since Roth growth is tax-free and benefits most from higher expected equity returns.",
+    roth_stock_pct = st.slider(
+        "Roth IRA: stock %", 0, 100, int(cfg.ROTH_STOCK_ALLOC * 100),
+        help="Percentage of the Roth IRA invested in stocks. Defaults to 100% since Roth growth is tax-free and benefits most from higher expected equity returns.",
     )
 
     st.subheader("Social Security")
@@ -190,12 +196,12 @@ with tab_sim:
         muni_rate_pct = st.number_input(
             "Muni bond rate (%)", min_value=0.0, max_value=20.0,
             value=round(cfg.MUNI_RATE * 100, 1), step=0.1, format="%.1f",
-            help="Fixed annual return on municipal bonds. Applied to the muni/cash account and to the bond portion of the IRA accounts.",
+            help="Fixed annual (tax-free) return on municipal bonds. 3% is a reasonable assumption. Applied to the muni/cash account and to the bond portion of the IRA accounts.",
         )
         stock_mean_pct = st.number_input(
             "Stock mean return (%)", min_value=-10.0, max_value=30.0,
             value=round(cfg.STOCK_MEAN * 100, 1), step=0.1, format="%.1f",
-            help="Expected annual return on the equity portion of the IRA accounts. Stock returns are drawn from a normal distribution with this mean each year.",
+            help="Expected annual return on the equity portion of the IRA accounts. Stock returns are drawn from a normal distribution with this mean each year. An expected return value of 7% is a reasonable assumption.",
         )
         stock_std_pct = st.number_input(
             "Stock volatility (%)", min_value=1.0, max_value=60.0,
@@ -229,8 +235,8 @@ with tab_sim:
             "initial_cash":          float(initial_cash),
             "initial_retirement":    float(initial_ret),
             "initial_roth":          float(initial_roth),
-            "retirement_muni_alloc": ret_muni_pct  / 100.0,
-            "roth_muni_alloc":       roth_muni_pct / 100.0,
+            "retirement_muni_alloc": 1.0 - ret_stock_pct  / 100.0,
+            "roth_muni_alloc":       1.0 - roth_stock_pct / 100.0,
             "ss_annual":             float(ss_annual),
             "ss_taxable_frac":       cfg.SS_TAXABLE_FRAC,
             "extra_income":          float(extra_income),

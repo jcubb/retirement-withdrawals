@@ -26,9 +26,9 @@ PENSION_ANNUAL = 0            # set > 0 to model a defined-benefit pension
 MUNI_RATE = 0.03              # fixed annual return on muni bonds
 STOCK_MEAN = 0.07             # mean annual stock return
 STOCK_STD = 0.15              # std dev of annual stock return
-RETIREMENT_MUNI_ALLOC = 0.40  # fraction of retirement account in muni bonds
-                               # rest is in stocks
-ROTH_MUNI_ALLOC = 0.0         # Roth: 100% stocks (maximize tax-free compounding)
+RETIREMENT_STOCK_ALLOC = 0.60  # fraction of traditional IRA invested in stocks
+                                # rest is in muni bonds (0.60 stocks / 0.40 bonds)
+ROTH_STOCK_ALLOC = 1.0         # Roth: 100% stocks (maximize tax-free compounding)
 
 # ── Simulation ────────────────────────────────────────────────────────────
 N_SIMULATIONS = 500
