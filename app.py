@@ -62,21 +62,25 @@ st.markdown(
 with st.expander("How to use this tool", expanded=False):
     st.markdown(
         """
+        **Primary Objective**
+
+        The primary objective of this tool is to find what constant level of after-tax income you can sustainably spend each year from now until the end of your life expectancy.
+     
         **Planning horizon and the two stages**
 
         The tool organizes your financial life into two stages defined by three age inputs:
         your **current age**, your **retirement age**, and your **life expectancy**.
 
         - **Stage 1 (current age → retirement age):** You are still earning employment income.
-          The optimizer can supplement that income with account withdrawals if needed, but the
+          You can supplement that income with account withdrawals if needed, but the
           primary goal is to let savings continue growing toward retirement.
         - **Stage 2 (retirement age → life expectancy):** Employment income stops. All spending
           must come from the three savings accounts — muni/cash, Traditional IRA, and Roth —
           plus any Pension Income, or Social Security benefits (which begin at the separate SS start age you specify,
           and can occur in either stage).
 
-        The optimizer jointly plans withdrawals across **both** stages simultaneously, so decisions
-        made in Stage 1 (such as drawing down the traditional IRA early to reduce future required minimum distribution (RMD)
+        The optimizer jointly plans withdrawals from your savings accounts across **both** stages simultaneously, so decisions
+        made in Stage 1 (such as drawing down a traditional IRA early to reduce future required minimum distribution (RMD)
         exposure) are evaluated against their downstream tax consequences in Stage 2.
 
         The asset allocation is very simple. Investments are either in tax free municipal bonds ("munis") with a fixed rate, 
@@ -86,11 +90,11 @@ with st.expander("How to use this tool", expanded=False):
 
         ---
 
-        This tool finds the optimal annual withdrawal strategy from three retirement accounts —
-        a **municipal bond (muni/cash)** account, a **Traditional IRA/401(k)**, and a **Roth IRA** —
-        across a specified number of simulated stock-return scenarios.
-        The optimizer chooses how much to draw from each account each year to find a maximum sustainable level of
-        after-tax income that can be spent each year.
+        This tool finds the optimal annual withdrawal strategy across three retirement accounts —
+        a **Muni/Cash** account, a **Traditional IRA/401(k)**, and a **Roth IRA** —
+        in each of a specified number of simulated stock-return scenarios.
+        In each scenario, the optimizer chooses how much to draw from each account to find a maximum sustainable level of
+        after-tax income that can be spent each year, conditional on the realized market returns. 
 
         | Source | Tax treatment | Notes |
         |---|---|---|
@@ -112,7 +116,7 @@ with st.expander("How to use this tool", expanded=False):
         that you will have leftover wealth at the end of the planning horizon to bequeath.
 
         **Steps to Setup the Simulation**
-        1. Enter your account balances, income details, and return assumptions in the **Setup** sidebar.
+        1. Enter your key ages, account balances, asset allocation, and income details in the **Setup** sidebar.
         2. Adjust market assumptions and Monte Carlo settings on the **Simulation** tab.
         3. Click **Run Simulation** — results appear on the **Results** tab.
 
