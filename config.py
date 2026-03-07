@@ -31,7 +31,7 @@ RETIREMENT_STOCK_ALLOC = 0.60  # fraction of traditional IRA invested in stocks
 ROTH_STOCK_ALLOC = 1.0         # Roth: 100% stocks (maximize tax-free compounding)
 
 # ── Simulation ────────────────────────────────────────────────────────────
-N_SIMULATIONS = 500
+N_SIMULATIONS = 100
 RANDOM_SEED = 42
 
 # ── Objective ─────────────────────────────────────────────────────────────
