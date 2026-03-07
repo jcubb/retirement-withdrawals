@@ -56,23 +56,24 @@ with st.expander("How to use this tool", expanded=False):
         - **Stage 2 (retirement age → life expectancy):** Employment income stops. All spending
           must come from the three savings accounts — muni/cash, Traditional IRA, and Roth —
           plus any Pension Income, or Social Security benefits (which begin at the separate SS start age you specify,
-          and can fall in either stage).
+          and can occur in either stage).
 
         The optimizer jointly plans withdrawals across **both** stages simultaneously, so decisions
         made in Stage 1 (such as drawing down the traditional IRA early to reduce future required minimum distribution (RMD)
         exposure) are evaluated against their downstream tax consequences in Stage 2.
 
-        The asset allocation is very simple. Investments are either in tax free municipal bonds ("munis") with a fixed rate, or in
-        stocks with the user-specified return and volatility. Set the percentage of stocks in each retirement account
-        to most closely approximate your true asset allocation.
+        The asset allocation is very simple. Investments are either in tax free municipal bonds ("munis") with a fixed rate, 
+        or in stocks with the user-specified return and volatility. Set the percentage of stocks in each retirement account
+        to most closely approximate your true asset allocation. The accounts will rebalance each year to maintain the same 
+        stock/bond mix that you set.
 
         ---
 
         This tool finds the optimal annual withdrawal strategy from three retirement accounts —
         a **municipal bond (muni/cash)** account, a **Traditional IRA/401(k)**, and a **Roth IRA** —
-        across thousands of simulated stock-return scenarios.
-        The optimizer chooses how much to draw from each account each year to maximize sustainable
-        spending while minimizing lifetime federal income taxes.
+        across a specified number of simulated stock-return scenarios.
+        The optimizer chooses how much to draw from each account each year to find a maximum sustainable level of
+        after-tax income that can be spent each year.
 
         | Source | Tax treatment | Notes |
         |---|---|---|
@@ -83,21 +84,24 @@ with st.expander("How to use this tool", expanded=False):
         | **Social Security** | 85% included in ordinary income | Begins at SS start age |
         | **Pension** | Ordinary income | Defined-benefit or annuity income; begins at retirement age and continues through the planning horizon |
 
-        **Steps**
+        **Steps to Setup the Simulation**
         1. Enter your account balances, income details, and return assumptions in the **Setup** sidebar.
         2. Adjust market assumptions and Monte Carlo settings on the **Simulation** tab.
         3. Click **Run Simulation** — results appear on the **Results** tab.
 
-        **Benchmarks:** Results are compared to two simple heuristic strategies —
-        **CRT** (Cash → Roth → Traditional) and **TRC** (Traditional → Roth → Cash) —
-        which draw from accounts in a fixed priority order and serve as lower bounds on
-        what the optimizer achieves.
+        **Benchmarks**
+
+        Results are compared to two simple heuristic strategies, which draw from the 3 accounts in a fixed order and
+        serve as lower bounds on what the optimizer achieves:
+
+        1. **CRT** (Cash → Roth → Traditional)
+        2. **TRC** (Traditional → Roth → Cash)
 
         **Results**
-        
+
         Some of the key results are contained in the first chart, which shows the probability of being 
         able to sustain different levels of after-tax income when following the optimal withdrawal strategy. 
-        The median and 95% worst case values are also shown in the summary table at the top.
+        The median and 95% worst case values from that first chart are also shown in the summary table at the top.
 
         ---
 
@@ -281,19 +285,24 @@ with tab_results:
         annual_consumption = df.groupby("sim_id")["consumption"].mean()
         p5_annual = annual_consumption.quantile(0.05)
 
-        c1, c2, c3, c4, c5, c6 = st.columns(6)
-        c1.metric("Median wealth at retirement",
-                  f"${s.get('median_wealth_at_retirement', 0):,.0f}")
-        c2.metric("Median annual after-tax income",
-                  f"${s.get('median_annual_consumption', 0):,.0f}")
-        c3.metric("95% chance min after-tax income",
-                  f"${p5_annual:,.0f}")
-        c4.metric("Median lifetime after-tax income",
-                  f"${s.get('median_total_consumption', 0):,.0f}")
-        c5.metric("Median lifetime taxes",
-                  f"${s.get('median_total_taxes', 0):,.0f}")
-        c6.metric("Simulations solved",
-                  f"{s['n_solved']:,} / {s['n_simulations']:,}")
+        with st.container(border=True):
+            c1, div, c2, c3 = st.columns([2, 0.1, 2, 2])
+            c1.metric("Median wealth at retirement",
+                      f"${s.get('median_wealth_at_retirement', 0):,.0f}")
+            div.markdown(
+                "<div style='border-left:1px solid #ccc; height:80px; margin:auto'></div>",
+                unsafe_allow_html=True,
+            )
+            c2.metric("Median annual after-tax income",
+                      f"${s.get('median_annual_consumption', 0):,.0f}")
+            c3.metric("95% chance min after-tax income",
+                      f"${p5_annual:,.0f}")
+        #c4.metric("Median lifetime after-tax income",
+        #          f"${s.get('median_total_consumption', 0):,.0f}")
+        #c5.metric("Median lifetime taxes",
+        #          f"${s.get('median_total_taxes', 0):,.0f}")
+        #c6.metric("Simulations solved",
+        #          f"{s['n_solved']:,} / {s['n_simulations']:,}")
 
         st.divider()
 

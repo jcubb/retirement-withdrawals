@@ -227,7 +227,7 @@ def plot_consumption_quantiles(results_df, title=None, save_path=None):
     prob = 100 - pcts   # probability of sustaining at least q_vals[i], 5%→95%
 
     panels = [
-        (opt, "Optimal",               "forestgreen"),
+        (opt, "Optimal Withdrawal Strategy", "forestgreen"),
         (crt, "CRT  (Cash→Roth→Trad)", "steelblue"),
         (trc, "TRC  (Trad→Roth→Cash)", "darkorange"),
     ]
@@ -238,10 +238,13 @@ def plot_consumption_quantiles(results_df, title=None, save_path=None):
     for ax, (series, label, color) in zip(axes, panels):
         q_vals = np.percentile(series, pcts)
         med    = float(np.median(series))
+        p95val = float(np.percentile(series, 5))  # 5th pct = 95% prob of sustaining
 
         ax.plot(prob, q_vals, color=color, lw=2.5)
         ax.axvline(50, color=color, lw=1.0, linestyle="--", alpha=0.55,
                    label=f"50%: ${med/1_000:.0f}k")
+        ax.axvline(95, color=color, lw=1.0, linestyle="--", alpha=0.55,
+                   label=f"95%: ${p95val/1_000:.0f}k")
 
         ax.set_title(label, fontsize=11)
         ax.set_xlabel("Probability of Sustaining")
@@ -251,7 +254,7 @@ def plot_consumption_quantiles(results_df, title=None, save_path=None):
             mticker.FuncFormatter(lambda x, _: f"{int(x)}%")
         )
         ax.grid(True, alpha=0.25, linestyle="--")
-        ax.legend(fontsize=8)
+        ax.legend(fontsize=10, loc="upper right")
         _dollar_fmt(ax)
 
     axes[0].set_ylabel("After-Tax Income")
