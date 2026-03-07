@@ -84,6 +84,16 @@ with st.expander("How to use this tool", expanded=False):
         | **Social Security** | 85% included in ordinary income | Begins at SS start age |
         | **Pension** | Ordinary income | Defined-benefit or annuity income; begins at retirement age and continues through the planning horizon |
 
+        **Bequests**
+
+        The goal is to draw down all accounts to **ZERO** by the end of the planning horizon (life expectancy). There is currently no
+        notion of a target bequest in the model. To accomodate a bequest, keep some of your wealth outside of this simulation, say by
+        entering lower amounts than you actually have in your cash, traditional, or Roth accounts. Any equity you have in your home is also
+        outside of the model, so you can consider your housing wealth a part of, or all of, your bequest. You can set a highly optimistic life
+        expectancy, so that under more realistic assumptions, you will still have some wealth remaining when your earthly time comes to an end. 
+        Finally, by setting yourself off on a spending path that is on the low end of the simulated results, you increase the probability 
+        that you will have leftover wealth at the end of the planning horizon to bequeath.
+
         **Steps to Setup the Simulation**
         1. Enter your account balances, income details, and return assumptions in the **Setup** sidebar.
         2. Adjust market assumptions and Monte Carlo settings on the **Simulation** tab.
