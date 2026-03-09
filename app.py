@@ -147,17 +147,17 @@ with st.sidebar:
 
     st.subheader("Ages")
     start_age = st.number_input(
-        "Current age", min_value=40, max_value=80, value=cfg.START_AGE,
+        "Current age", min_value=30, max_value=90, value=cfg.START_AGE,
         help="Your current age. The optimizer plans withdrawals from this age through the life expectancy you set.",
     )
     ret_age = st.number_input(
-        "Retirement age", min_value=40, max_value=80, value=cfg.RETIREMENT_AGE,
+        "Retirement age", min_value=40, max_value=90, value=cfg.RETIREMENT_AGE,
         help="Age at which earned employment income stops. If you are already retired, enter your actual retirement age even if it is before your current age — the optimizer will treat employment income as $0 and start pension income immediately.",
     )
     if int(start_age) >= int(ret_age):
         st.caption("Already retired — employment income is $0; pension income (if any) begins immediately.")
     ss_start = st.number_input(
-        "SS start age", min_value=62, max_value=85, value=cfg.SS_START_AGE,
+        "SS start age", min_value=62, max_value=90, value=cfg.SS_START_AGE,
         help="Age at which Social Security payments begin. The model holds your benefit amount fixed at whatever you enter — it does not adjust for claiming age.",
     )
     death_age = st.number_input(
@@ -217,17 +217,17 @@ with st.sidebar:
     )
     st.caption(f"${pension_annual:,.0f}")
 
-    st.subheader("IRA Contributions (pre-retirement)")
+    st.markdown("#### IRA Contributions<br>(pre-retirement)", unsafe_allow_html=True)
     trad_ira_contrib = st.number_input(
         "Annual Traditional IRA contribution ($/yr)",
         min_value=0, max_value=100_000, value=cfg.TRAD_IRA_CONTRIB, step=500,
-        help="Annual contribution to your Traditional IRA each year during pre-retirement. Added to the account balance and grows tax-deferred. 2026 IRS limits: $7,500/yr (under 50) or $8,600/yr (age 50+); combined Traditional + Roth contributions cannot exceed this limit.",
+        help="Annual contribution to your Traditional IRA each year during pre-retirement. Added to the account balance and grows tax-deferred. 2026 IRS limits: \$7,500/yr (under 50) or \$8,600/yr (age 50+); combined Traditional + Roth contributions cannot exceed this limit.",
     )
     st.caption(f"${trad_ira_contrib:,.0f}")
     roth_ira_contrib = st.number_input(
         "Annual Roth IRA contribution ($/yr)",
         min_value=0, max_value=100_000, value=cfg.ROTH_IRA_CONTRIB, step=500,
-        help="Annual contribution to your Roth IRA each year during pre-retirement. Made after-tax and grows tax-free. 2026 IRS limits: $7,500/yr (under 50) or $8,600/yr (age 50+); combined Traditional + Roth contributions cannot exceed this limit.",
+        help="Annual contribution to your Roth IRA each year during pre-retirement. Made after-tax and grows tax-free. 2026 IRS limits: \$7,500/yr (under 50) or \$8,600/yr (age 50+); combined Traditional + Roth contributions cannot exceed this limit.",
     )
     st.caption(f"${roth_ira_contrib:,.0f}")
 
