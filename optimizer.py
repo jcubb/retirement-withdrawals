@@ -12,7 +12,6 @@
 
 import numpy as np
 from scipy.optimize import linprog, brentq
-import cvxpy as cp
 
 from tax_utils import compute_tax_scalar, marginal_rate as _marginal_rate
 from rmd_utils import get_distribution_period
@@ -75,6 +74,8 @@ def _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0
     Problem is scaled to units of millions ($M) for OSQP numerical stability.
     Returns (w1_opt, w2_opt, w3_opt) in original dollar units, or None.
     """
+    import cvxpy as cp  # lazy import — only loaded when QP objective is used
+
     T = len(ss)
     K = _K
 
