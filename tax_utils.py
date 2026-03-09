@@ -1,6 +1,5 @@
 # tax_utils.py — Federal income tax calculation (scalar and CVXPY)
 
-import cvxpy as cp
 from config import BRACKETS_2026_MFJ, STANDARD_DEDUCTION_2026_MFJ
 
 
@@ -81,6 +80,8 @@ def compute_tax_cvxpy(income_exprs, brackets=None, std_ded=None):
     for lower, _upper, rate in brackets:
         increments.append((lower, rate - prev_rate))
         prev_rate = rate
+
+    import cvxpy as cp  # lazy import — only loaded when QP objective is used
 
     total_tax = 0.0
     for income in income_exprs:
