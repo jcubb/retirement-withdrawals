@@ -37,7 +37,30 @@ _DELTA_RATES = np.array(_DELTA_RATES)
 _THRESHOLDS  = np.array(_THRESHOLDS)
 
 
-def _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0, start_age):
+def _contrib_accumulated(contrib_annual, T_pre, G, T):
+    """
+    Compounded value of a fixed annual contribution added at the start of each
+    pre-retirement year (t = 0 .. T_pre-1).
+
+    contrib at year tau grows by G[t]/G[tau] to reach time t, so:
+        result[t] = contrib * sum_{tau=0}^{min(t-1, T_pre-1)} G[t] / G[tau]
+
+    Returns array of length T+1 (result[0] = 0 always).
+    """
+    if contrib_annual == 0.0 or T_pre == 0:
+        return np.zeros(T + 1)
+    inv_G = 1.0 / G[:T_pre]                     # 1/G[0], 1/G[1], ..., 1/G[T_pre-1]
+    inv_cumsum = np.zeros(T_pre + 1)
+    inv_cumsum[1:] = np.cumsum(inv_G)            # inv_cumsum[k] = sum_{tau=0}^{k-1} 1/G[tau]
+    out = np.zeros(T + 1)
+    for t in range(1, T + 1):
+        k = min(t, T_pre)
+        out[t] = contrib_annual * G[t] * inv_cumsum[k]
+    return out
+
+
+def _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0,
+                       contrib2_growth, contrib3_growth, start_age):
     """
     Solve QP to minimize variance of annual after-tax consumption.
 
@@ -82,13 +105,16 @@ def _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0
     L_G  = np.tril(G[1:T+1][:,  np.newaxis] / G[:T][np.newaxis, :])
     L_G3 = np.tril(G3[1:T+1][:, np.newaxis] / G3[:T][np.newaxis, :])
 
+    c2g_s = contrib2_growth / sc
+    c3g_s = contrib3_growth / sc
+
     constraints = [
         h_coeff  @ w1 == A1_s * H[T],
-        g_coeff  @ w2 == A2_s * G[T],
-        g3_coeff @ w3 == A3_s * G3[T],
+        g_coeff  @ w2 == A2_s * G[T]   + c2g_s[T],
+        g3_coeff @ w3 == A3_s * G3[T]  + c3g_s[T],
         L_H  @ w1 <= A1_s * H[1:T+1],
-        L_G  @ w2 <= A2_s * G[1:T+1],
-        L_G3 @ w3 <= A3_s * G3[1:T+1],
+        L_G  @ w2 <= A2_s * G[1:T+1]  + c2g_s[1:T+1],
+        L_G3 @ w3 <= A3_s * G3[1:T+1] + c3g_s[1:T+1],
     ]
 
     for t in range(T):
@@ -105,7 +131,7 @@ def _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0
         for tau in range(t):
             row[tau] = G[t] / G[tau]
         rmd_A.append(row)
-        rmd_b.append(A2_s * G[t])
+        rmd_b.append(A2_s * G[t] + c2g_s[t])
     if rmd_A:
         constraints.append(np.array(rmd_A) @ w2 >= np.array(rmd_b))
 
@@ -162,7 +188,10 @@ def optimize_withdrawals(r_stock_path, params):
     T = death_age - start_age
     K = _K
 
-    pension_annual = params.get("pension_annual", 0.0)
+    pension_annual  = params.get("pension_annual",   0.0)
+    trad_contrib    = params.get("trad_ira_contrib",  0.0)
+    roth_contrib    = params.get("roth_ira_contrib",  0.0)
+    T_pre           = max(0, min(ret_age - start_age, T))
 
     # ── Exogenous income arrays ───────────────────────────────────────────
     ss      = np.array([ss_annual     if (start_age + t) >= ss_start else 0.0 for t in range(T)])
@@ -190,9 +219,17 @@ def optimize_withdrawals(r_stock_path, params):
     for t in range(T):
         G3[t + 1] = G3[t] * (1.0 + r3[t])
 
+    # ── IRA contribution growth arrays ─────────────────────────────────────
+    contrib2_growth = _contrib_accumulated(trad_contrib, T_pre, G,  T)
+    contrib3_growth = _contrib_accumulated(roth_contrib,  T_pre, G3, T)
+    # Per-year contribution arrays for result extraction
+    c2 = np.array([trad_contrib if t < T_pre else 0.0 for t in range(T)])
+    c3 = np.array([roth_contrib  if t < T_pre else 0.0 for t in range(T)])
+
     # ── QP branch: minimize variance of annual consumption ────────────────
     if objective == "minimize_variance_consumption":
-        qp_out = _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0, start_age)
+        qp_out = _solve_variance_qp(ss, emp, ss_tax, pen, pension, G, H, G3, A1_0, A2_0, A3_0,
+                                    contrib2_growth, contrib3_growth, start_age)
         if qp_out is None:
             return None
         w1_opt, w2_opt, w3_opt = qp_out
@@ -220,10 +257,10 @@ def optimize_withdrawals(r_stock_path, params):
         b_eq[0] = A1_0 * H[T]
         for t in range(T):
             A_eq[1, i2(t)] = G[T] / G[t]
-        b_eq[1] = A2_0 * G[T]
+        b_eq[1] = A2_0 * G[T] + contrib2_growth[T]
         for t in range(T):
             A_eq[2, i3(t)] = G3[T] / G3[t]
-        b_eq[2] = A3_0 * G3[T]
+        b_eq[2] = A3_0 * G3[T] + contrib3_growth[T]
 
         ub_rows, ub_rhs = [], []
 
@@ -250,7 +287,7 @@ def optimize_withdrawals(r_stock_path, params):
             for tau in range(t):
                 row[i2(tau)] = G[t] / G[tau]
             ub_rows.append(row)
-            ub_rhs.append(A2_0 * G[t])
+            ub_rhs.append(A2_0 * G[t] + contrib2_growth[t])
 
         # A3[t] >= 0
         for t in range(1, T + 1):
@@ -258,7 +295,7 @@ def optimize_withdrawals(r_stock_path, params):
             for tau in range(t):
                 row[i3(tau)] = G3[t] / G3[tau]
             ub_rows.append(row)
-            ub_rhs.append(A3_0 * G3[t])
+            ub_rhs.append(A3_0 * G3[t] + contrib3_growth[t])
 
         # RMD (traditional account only; Roth has no RMD)
         for t in range(T):
@@ -271,7 +308,7 @@ def optimize_withdrawals(r_stock_path, params):
             for tau in range(t):
                 row[i2(tau)] = -G[t] / G[tau]
             ub_rows.append(row)
-            ub_rhs.append(-A2_0 * G[t])
+            ub_rhs.append(-A2_0 * G[t] - contrib2_growth[t])
 
         A_ub = np.array(ub_rows) if ub_rows else np.empty((0, N))
         b_ub = np.array(ub_rhs)  if ub_rhs  else np.empty(0)
@@ -344,9 +381,9 @@ def optimize_withdrawals(r_stock_path, params):
     A2_path[0] = A2_0
     A3_path[0] = A3_0
     for t in range(T):
-        A1_path[t + 1] = (A1_path[t] - w1_opt[t]) * (1.0 + r_muni)
-        A2_path[t + 1] = (A2_path[t] - w2_opt[t]) * (1.0 + r2[t])
-        A3_path[t + 1] = (A3_path[t] - w3_opt[t]) * (1.0 + r3[t])
+        A1_path[t + 1] = (A1_path[t] - w1_opt[t])           * (1.0 + r_muni)
+        A2_path[t + 1] = (A2_path[t] - w2_opt[t] + c2[t])   * (1.0 + r2[t])
+        A3_path[t + 1] = (A3_path[t] - w3_opt[t] + c3[t])   * (1.0 + r3[t])
 
     income_tax = np.array([
         compute_tax_scalar(w2_opt[t] + ss_tax[t] + emp[t] + pension[t])
@@ -376,7 +413,8 @@ def optimize_withdrawals(r_stock_path, params):
     }
 
 
-def _sim_crt(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0):
+def _sim_crt(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0,
+             contrib2, contrib3):
     """
     Simulate Cash → Roth → Traditional ordering with constant consumption target C.
 
@@ -417,14 +455,15 @@ def _sim_crt(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0)
         income_tax = compute_tax_scalar(w2 + sst + et + pt)
         taxes   = income_tax + pen_t * w2
         cons[t] = w1 + w3 + w2 + st + et + pt - taxes
-        A1 = max(0.0, (A1 - w1) * (1.0 + r_muni))
-        A3 = max(0.0, (A3 - w3) * (1.0 + r3[t]))
-        A2 = max(0.0, (A2 - w2) * (1.0 + r2[t]))
+        A1 = max(0.0, (A1 - w1)             * (1.0 + r_muni))
+        A3 = max(0.0, (A3 - w3 + contrib3[t]) * (1.0 + r3[t]))
+        A2 = max(0.0, (A2 - w2 + contrib2[t]) * (1.0 + r2[t]))
 
     return cons, A1, A2, A3
 
 
-def _sim_trc(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0):
+def _sim_trc(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0,
+             contrib2, contrib3):
     """
     Simulate Traditional → Roth → Cash ordering with constant consumption target C.
 
@@ -470,14 +509,15 @@ def _sim_trc(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0)
         income_tax = compute_tax_scalar(w2 + sst + et + pt)
         taxes   = income_tax + pen_t * w2
         cons[t] = w1 + w3 + w2 + st + et + pt - taxes
-        A2 = max(0.0, (A2 - w2) * (1.0 + r2[t]))
-        A3 = max(0.0, (A3 - w3) * (1.0 + r3[t]))
-        A1 = max(0.0, (A1 - w1) * (1.0 + r_muni))
+        A2 = max(0.0, (A2 - w2 + contrib2[t]) * (1.0 + r2[t]))
+        A3 = max(0.0, (A3 - w3 + contrib3[t]) * (1.0 + r3[t]))
+        A1 = max(0.0, (A1 - w1)               * (1.0 + r_muni))
 
     return cons, A1, A2, A3
 
 
-def _raw_terminal_crt(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0):
+def _raw_terminal_crt(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0,
+                      contrib2, contrib3):
     """
     Uncapped terminal A2 balance for the CRT strategy (for bisection).
 
@@ -519,14 +559,15 @@ def _raw_terminal_crt(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2
                 w2_hi = max(10.0 * C, 1e7)
                 w2 = brentq(f, 0.0, w2_hi, xtol=1.0)
 
-        A1     = max(0.0, (A1     - w1) * (1.0 + r_muni))
-        A3     = max(0.0, (A3     - w3) * (1.0 + r3[t]))
-        A2_raw =          (A2_raw - w2) * (1.0 + r2[t])   # no floor
+        A1     = max(0.0, (A1     - w1)               * (1.0 + r_muni))
+        A3     = max(0.0, (A3     - w3 + contrib3[t])  * (1.0 + r3[t]))
+        A2_raw =          (A2_raw - w2 + contrib2[t])  * (1.0 + r2[t])   # no floor
 
     return A2_raw   # > 0 if surplus, < 0 if overdraft
 
 
-def _raw_terminal_trc(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0):
+def _raw_terminal_trc(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2_0, A3_0,
+                      contrib2, contrib3):
     """
     Uncapped terminal A1 balance for the TRC strategy (for bisection).
 
@@ -569,9 +610,9 @@ def _raw_terminal_trc(C, ss, emp, ss_tax, pen, pension, r_muni, r2, r3, A1_0, A2
             w3 = 0.0
             w1 = 0.0
 
-        A2     = max(0.0, (A2     - w2) * (1.0 + r2[t]))
-        A3     = max(0.0, (A3     - w3) * (1.0 + r3[t]))
-        A1_raw =          (A1_raw - w1) * (1.0 + r_muni)   # no floor
+        A2     = max(0.0, (A2     - w2 + contrib2[t]) * (1.0 + r2[t]))
+        A3     = max(0.0, (A3     - w3 + contrib3[t]) * (1.0 + r3[t]))
+        A1_raw =          (A1_raw - w1)                * (1.0 + r_muni)   # no floor
 
     return A1_raw   # > 0 if surplus, < 0 if overdraft
 
@@ -615,8 +656,11 @@ def benchmark_consumptions(r_stock_path, params):
     ret_age   = params["retirement_age"]
 
     pension_annual = params.get("pension_annual", 0.0)
+    trad_contrib   = params.get("trad_ira_contrib", 0.0)
+    roth_contrib   = params.get("roth_ira_contrib",  0.0)
 
     T = death_age - start_age
+    T_pre   = max(0, min(ret_age - start_age, T))
     ss      = np.array([ss_annual     if (start_age + t) >= ss_start else 0.0 for t in range(T)])
     emp     = np.array([extra_inc     if (start_age + t) < ret_age   else 0.0 for t in range(T)])
     pension = np.array([pension_annual if (start_age + t) >= ret_age  else 0.0 for t in range(T)])
@@ -625,8 +669,19 @@ def benchmark_consumptions(r_stock_path, params):
     r2      = alpha  * r_muni + (1.0 - alpha)  * r_stock_path
     r3      = alpha3 * r_muni + (1.0 - alpha3) * r_stock_path
 
+    # Cumulative growth factors needed for _contrib_accumulated
+    G2 = np.ones(T + 1)
+    G3v = np.ones(T + 1)
+    for t in range(T):
+        G2[t + 1]  = G2[t]  * (1.0 + r2[t])
+        G3v[t + 1] = G3v[t] * (1.0 + r3[t])
+
+    contrib2 = np.array([trad_contrib if t < T_pre else 0.0 for t in range(T)])
+    contrib3 = np.array([roth_contrib  if t < T_pre else 0.0 for t in range(T)])
+
     kw = dict(ss=ss, emp=emp, ss_tax=ss_tax, pen=pen, pension=pension,
-              r_muni=r_muni, r2=r2, r3=r3, A1_0=A1_0, A2_0=A2_0, A3_0=A3_0)
+              r_muni=r_muni, r2=r2, r3=r3, A1_0=A1_0, A2_0=A2_0, A3_0=A3_0,
+              contrib2=contrib2, contrib3=contrib3)
 
     def find_C(terminal_fn):
         """Find C where terminal_fn crosses zero (monotone decreasing in C)."""

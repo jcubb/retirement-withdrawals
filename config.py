@@ -22,6 +22,10 @@ EXTRA_INCOME = 0              # set > 0 to model part-time income
 # Optional pension income starting at retirement age (fully taxable)
 PENSION_ANNUAL = 0            # set > 0 to model a defined-benefit pension
 
+# Optional IRA contributions during pre-retirement phase (Stage 1 only)
+TRAD_IRA_CONTRIB = 0          # annual Traditional IRA contribution
+ROTH_IRA_CONTRIB = 0          # annual Roth IRA contribution
+
 # ── Investment parameters ─────────────────────────────────────────────────
 MUNI_RATE = 0.03              # fixed annual return on muni bonds
 STOCK_MEAN = 0.07             # mean annual stock return

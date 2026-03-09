@@ -26,6 +26,8 @@ def build_params(overrides=None):
         "ss_taxable_frac":       cfg.SS_TAXABLE_FRAC,
         "extra_income":          cfg.EXTRA_INCOME,
         "pension_annual":        cfg.PENSION_ANNUAL,
+        "trad_ira_contrib":      cfg.TRAD_IRA_CONTRIB,
+        "roth_ira_contrib":      cfg.ROTH_IRA_CONTRIB,
         "retirement_age":        cfg.RETIREMENT_AGE,
         "n_simulations":         cfg.N_SIMULATIONS,
         "random_seed":           cfg.RANDOM_SEED,

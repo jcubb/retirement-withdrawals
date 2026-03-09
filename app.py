@@ -207,7 +207,7 @@ with st.sidebar:
     extra_income = st.number_input(
         "Pre-retirement income ($/yr)",
         min_value=0, max_value=2_000_000, value=cfg.EXTRA_INCOME, step=10_000,
-        help="Employment or other earned income received before retirement age. Fully included in taxable ordinary income. Phases out to zero at the retirement age you set.",
+        help="Employment or other earned income received before retirement age. Fully included in taxable ordinary income. Phases out to zero at the retirement age you set. If you make pre-tax 401(k) contributions, enter your income net of those contributions (i.e., what goes on your W-2 as taxable wages).",
     )
     st.caption(f"${extra_income:,.0f}")
     pension_annual = st.number_input(
@@ -216,6 +216,20 @@ with st.sidebar:
         help="Defined-benefit pension or other annuity income that begins at retirement age and continues through the end of the planning horizon. Fully included in taxable ordinary income. Leave at $0 if you have no pension.",
     )
     st.caption(f"${pension_annual:,.0f}")
+
+    st.subheader("IRA Contributions (pre-retirement)")
+    trad_ira_contrib = st.number_input(
+        "Annual Traditional IRA contribution ($/yr)",
+        min_value=0, max_value=100_000, value=cfg.TRAD_IRA_CONTRIB, step=500,
+        help="Annual contribution to your Traditional IRA each year during pre-retirement. Added to the account balance and grows tax-deferred. 2026 IRS limits: $7,500/yr (under 50) or $8,600/yr (age 50+); combined Traditional + Roth contributions cannot exceed this limit.",
+    )
+    st.caption(f"${trad_ira_contrib:,.0f}")
+    roth_ira_contrib = st.number_input(
+        "Annual Roth IRA contribution ($/yr)",
+        min_value=0, max_value=100_000, value=cfg.ROTH_IRA_CONTRIB, step=500,
+        help="Annual contribution to your Roth IRA each year during pre-retirement. Made after-tax and grows tax-free. 2026 IRS limits: $7,500/yr (under 50) or $8,600/yr (age 50+); combined Traditional + Roth contributions cannot exceed this limit.",
+    )
+    st.caption(f"${roth_ira_contrib:,.0f}")
 
 
 # ── Main tabs ─────────────────────────────────────────────────────────────────
@@ -276,6 +290,8 @@ with tab_sim:
             "ss_taxable_frac":       cfg.SS_TAXABLE_FRAC,
             "extra_income":          float(extra_income),
             "pension_annual":        float(pension_annual),
+            "trad_ira_contrib":      float(trad_ira_contrib),
+            "roth_ira_contrib":      float(roth_ira_contrib),
             "muni_rate":             muni_rate_pct  / 100.0,
             "stock_mean":            stock_mean_pct / 100.0,
             "stock_std":             stock_std_pct  / 100.0,
