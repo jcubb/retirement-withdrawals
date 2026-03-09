@@ -66,6 +66,11 @@ with st.expander("How to use this tool", expanded=False):
 
         The primary objective of this tool is to find what constant level of after-tax income you can sustainably spend each year from now until the end of your life expectancy.
      
+        The tool setup implicitly assumes that it is being used by a married couple filing jointly (the MFJ tax brackets are used), who are of similar age and life expectancy. 
+        If you are part of a couple with very different ages or life expectancies, you can approximate your financial situation relatively well by basing assumptions on the younger
+        spouse, and approximating your (average) income stream using the pre- and post- retirement income inputs. If you are single, the use of the MFJ tax brackets will 
+        cause your sustainable after-tax income to be overstated.
+
         **Planning horizon and the two stages**
 
         The tool organizes your financial life into two stages defined by three age inputs:
