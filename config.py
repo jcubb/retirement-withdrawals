@@ -27,8 +27,8 @@ TRAD_IRA_CONTRIB = 0          # annual Traditional IRA contribution
 ROTH_IRA_CONTRIB = 0          # annual Roth IRA contribution
 
 # ── Investment parameters ─────────────────────────────────────────────────
-MUNI_RATE = 0.03              # fixed annual return on muni bonds
-STOCK_MEAN = 0.07             # mean annual stock return
+MUNI_RATE = 0.02              # fixed annual (real) return on muni bonds
+STOCK_MEAN = 0.05             # mean annual (real) stock return
 STOCK_STD = 0.15              # std dev of annual stock return
 RETIREMENT_STOCK_ALLOC = 0.60  # fraction of traditional IRA invested in stocks
                                 # rest is in muni bonds (0.60 stocks / 0.40 bonds)

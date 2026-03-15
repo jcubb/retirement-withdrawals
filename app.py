@@ -89,9 +89,10 @@ with st.expander("How to use this tool", expanded=False):
         exposure) are evaluated against their downstream tax consequences in Stage 2.
 
         The asset allocation is very simple. Investments are either in tax free municipal bonds ("munis") with a fixed rate, 
-        or in stocks with the user-specified return and volatility. Set the percentage of stocks in each retirement account
-        to most closely approximate your true asset allocation. The accounts will rebalance each year to maintain the same 
-        stock/bond mix that you set.
+        or in stocks with the user-specified return and volatility. The default values are set to target **real** rates of
+        expected returns. Then the results can be thought of as in **current dollars**. Set the percentage of stocks in each
+        retirement account to most closely approximate your true asset allocation. The accounts will rebalance each year to 
+        maintain the same stock/bond mix that you set.
 
         ---
 
